@@ -96,3 +96,7 @@ def obter_resumo(usuario_id: int):
 def remover_transacao(id: int):
     deletar_transacao(id)
     return {"mensagem": "Transação removida."}
+
+@app.get("/")
+def raiz():
+    return {"mensagem": "API do App Finanças está rodando!"}
