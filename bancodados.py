@@ -30,6 +30,7 @@ metas = """
     titulo TEXT NOT NULL,
     salario_liquido REAL NOT NULL,
     meta REAL NOT NULL,
+    parcelas_concluidas TEXT NOT NULL DEFAULT '',
     FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE
 )"""
 
@@ -40,6 +41,17 @@ def criar_banco():
     cursor.execute(metas)
     cursor.execute(transacoes)
     conn.commit()
+
+    # Migração: bancos criados antes da coluna parcelas_concluidas existir
+    # precisam dela adicionada manualmente, já que "CREATE TABLE IF NOT EXISTS"
+    # não altera tabelas já existentes.
+    try:
+        cursor.execute("ALTER TABLE metas ADD COLUMN parcelas_concluidas TEXT NOT NULL DEFAULT ''")
+        conn.commit()
+    except sqlite3.OperationalError:
+        # Coluna já existe, nada a fazer.
+        pass
+
     conn.close()
 
 def verificar_usuario(usuario):
@@ -173,11 +185,40 @@ def inserir_titulo_salario_e_meta(usuario_id, titulo, salario_liquido, meta):
     conn.commit()
     conn.close()
 
-def atualizar_titulo_salario_e_meta(usuario_id, titulo, salario_liquido, meta):
+def atualizar_titulo_salario_e_meta(usuario_id, titulo_antigo, titulo_novo, salario_liquido, meta):
+    # IMPORTANTE: isto faz um UPDATE na própria linha (em vez de deletar e
+    # recriar a meta), para que a coluna parcelas_concluidas NUNCA seja
+    # apagada quando o usuário só edita título/salário/porcentagem.
     conn = sqlite3.connect("banco.db")
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE metas SET titulo = ?, salario_liquido = ?, meta = ? WHERE usuario_id = ?", (titulo, salario_liquido, meta, usuario_id)
+        "UPDATE metas SET titulo = ?, salario_liquido = ?, meta = ? WHERE usuario_id = ? AND titulo = ?",
+        (titulo_novo, salario_liquido, meta, usuario_id, titulo_antigo)
+    )
+    conn.commit()
+    conn.close()
+
+def buscar_parcelas_meta(usuario_id, titulo):
+    conn = sqlite3.connect("banco.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT parcelas_concluidas FROM metas WHERE usuario_id = ? AND titulo = ?",
+        (usuario_id, titulo)
+    )
+    resultado = cursor.fetchone()
+    conn.close()
+    return resultado[0] if resultado else ""
+
+def atualizar_parcelas_meta(usuario_id, titulo, parcelas_concluidas):
+    # parcelas_concluidas: string com os índices concluídos separados por
+    # vírgula, ex: "0,1,2,5". Nunca remove índices já salvos (ver metas.py),
+    # então uma parcela marcada como concluída não pode voltar a ficar
+    # desmarcada, mesmo em outra sessão/login.
+    conn = sqlite3.connect("banco.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE metas SET parcelas_concluidas = ? WHERE usuario_id = ? AND titulo = ?",
+        (parcelas_concluidas, usuario_id, titulo)
     )
     conn.commit()
     conn.close()
