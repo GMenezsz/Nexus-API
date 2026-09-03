@@ -42,9 +42,7 @@ def criar_banco():
     cursor.execute(transacoes)
     conn.commit()
 
-    # Migração: bancos criados antes da coluna parcelas_concluidas existir
-    # precisam dela adicionada manualmente, já que "CREATE TABLE IF NOT EXISTS"
-    # não altera tabelas já existentes.
+
     try:
         cursor.execute("ALTER TABLE metas ADD COLUMN parcelas_concluidas TEXT NOT NULL DEFAULT ''")
         conn.commit()
@@ -186,9 +184,6 @@ def inserir_titulo_salario_e_meta(usuario_id, titulo, salario_liquido, meta):
     conn.close()
 
 def atualizar_titulo_salario_e_meta(usuario_id, titulo_antigo, titulo_novo, salario_liquido, meta):
-    # IMPORTANTE: isto faz um UPDATE na própria linha (em vez de deletar e
-    # recriar a meta), para que a coluna parcelas_concluidas NUNCA seja
-    # apagada quando o usuário só edita título/salário/porcentagem.
     conn = sqlite3.connect("banco.db")
     cursor = conn.cursor()
     cursor.execute(
@@ -210,10 +205,6 @@ def buscar_parcelas_meta(usuario_id, titulo):
     return resultado[0] if resultado else ""
 
 def atualizar_parcelas_meta(usuario_id, titulo, parcelas_concluidas):
-    # parcelas_concluidas: string com os índices concluídos separados por
-    # vírgula, ex: "0,1,2,5". Nunca remove índices já salvos (ver metas.py),
-    # então uma parcela marcada como concluída não pode voltar a ficar
-    # desmarcada, mesmo em outra sessão/login.
     conn = sqlite3.connect("banco.db")
     cursor = conn.cursor()
     cursor.execute(
