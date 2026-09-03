@@ -28,8 +28,8 @@ def calcular_transacoes(transacoes):
 
     return {
         "saldo": saldo,
-        "total_receitas": total_receitas,
-        "total_despesas": total_despesas,
+        "receitas": total_receitas,
+        "despesas": total_despesas,
         "resumo_categoria": resumo_categoria,
     }
 
