@@ -18,7 +18,8 @@ usuario = """
         nome TEXT NOT NULL,
         sobrenome TEXT NOT NULL,
         usuario TEXT NOT NULL UNIQUE,
-        senha TEXT NOT NULL
+        senha TEXT NOT NULL,
+        foto TEXT DEFAULT NULL
     )
 """
 
@@ -44,7 +45,7 @@ def criar_banco():
 def verificar_usuario(usuario):
     conn = sqlite3.connect("banco.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT nome, senha FROM usuarios WHERE usuario = ?", (usuario,))
+    cursor.execute("SELECT nome, senha, foto FROM usuarios WHERE usuario = ?", (usuario,))
     resultado = cursor.fetchone()
     conn.close()
     return resultado
@@ -56,6 +57,16 @@ def buscar_id_por_usuario(usuario: str):
     resultado = cursor.fetchone()
     conn.close()
     return resultado[0] if resultado else None
+
+def atualizar_foto_usuario(usuario_id, foto_base64):
+    conn = sqlite3.connect("banco.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE usuarios SET foto = ? WHERE id = ?", 
+        (foto_base64, usuario_id)
+    )
+    conn.commit()
+    conn.close()
 
 def buscar_senha_por_usuario(usuario: str):
     conn = sqlite3.connect("banco.db")
