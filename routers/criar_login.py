@@ -1,12 +1,16 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from bancodados import verificar_usuario, inserir_usuario, atualizar_usuario, excluir_conta, reiniciar_dados_usuario, buscar_id_por_usuario, atualizar_senha, buscar_senha_por_usuario
+from bancodados import verificar_usuario, inserir_usuario, atualizar_usuario, excluir_conta, reiniciar_dados_usuario, buscar_id_por_usuario, atualizar_senha, buscar_senha_por_usuario, atualizar_foto_usuario
 from autenticacoes import autenticar_nome, autenticar_sobrenome, autenticar_usuario, autenticar_senha
 
 from criptografia import criar_hash, verificar_senha
 
 router = APIRouter(tags=["Usuários"])
+
+class FotoSchema(BaseModel):
+    usuario: str
+    foto: str 
 
 class LoginSchema(BaseModel):
     usuario: str
@@ -55,16 +59,21 @@ def cadastrar_usuario(dados: UsuarioSchema):
 
 @router.post("/login")
 def fazer_login(dados: LoginSchema):
-
     usuario_existente = verificar_usuario(dados.usuario.strip())
     
     if not usuario_existente or not verificar_senha(dados.senha, usuario_existente[1]):
         raise HTTPException(status_code=400, detail="Usuário ou senha inválidos.")
     
     nome = usuario_existente[0]
+    foto = usuario_existente[2] 
+    
     return {
+        "access_token": dados.usuario.strip(),
+        "token_type": "bearer",
         "nome": nome,
-        "boas_vindas": f"Olá, {nome}!"}
+        "foto": foto,
+        "boas_vindas": f"Olá, {nome}!"
+    }
 
 @router.put("/atualizar_nome_sobrenome")
 def atualizar_usuario_endpoint(dados: AtualizarNomeSchema):
@@ -140,3 +149,14 @@ def atualizar_senha_endpoint(dados: AtualizarSenhaSchema):
     return {
         "mensagem": "Senha atualizada com sucesso!"
     }
+
+@router.put("/atualizar_foto")
+def atualizar_foto_endpoint(dados: FotoSchema):
+    usuario_formatado = dados.usuario.strip().lower()
+    usuario_id = buscar_id_por_usuario(usuario_formatado)
+    
+    if not usuario_id:
+        raise HTTPException(status_code=400, detail="Usuário não encontrado.")
+    
+    atualizar_foto_usuario(usuario_id, dados.foto)
+    return {"mensagem": "Foto atualizada com sucesso!", "foto": dados.foto}
