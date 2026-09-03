@@ -19,10 +19,10 @@ app.include_router(metas.router)
 app.include_router(transacoes.router)
 app.include_router(criar_login.router)
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD", "POST"])
 def raiz():
     return {"status": "API rodando 100%!"}
 
-@app.api_route("/health", methods=["GET", "HEAD"])
+@app.api_route("/health", methods=["GET", "HEAD", "POST"])
 def health_check():
     return {"status": "ok"}
