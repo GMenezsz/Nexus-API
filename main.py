@@ -22,3 +22,7 @@ app.include_router(criar_login.router)
 @app.get("/")
 def raiz():
     return {"status": "API rodando 100%!"}
+
+@app.get("/")
+def home():
+    return {"status": "online", "app": "Nexus API"}
