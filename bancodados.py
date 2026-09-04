@@ -54,7 +54,7 @@ def criar_banco():
 def verificar_usuario(usuario):
     conn = sqlite3.connect("banco.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT nome, senha, foto FROM usuarios WHERE usuario = ?", (usuario,))
+    cursor.execute("SELECT nome, senha, foto, sobrenome FROM usuarios WHERE usuario = ?", (usuario,))
     resultado = cursor.fetchone()
     conn.close()
     return resultado
