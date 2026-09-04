@@ -65,12 +65,14 @@ def fazer_login(dados: LoginSchema):
         raise HTTPException(status_code=400, detail="Usuário ou senha inválidos.")
     
     nome = usuario_existente[0]
-    foto = usuario_existente[2] 
+    foto = usuario_existente[2]
+    sobrenome = usuario_existente[3]
+    nome_completo = f"{nome} {sobrenome}".strip()
     
     return {
         "access_token": dados.usuario.strip(),
         "token_type": "bearer",
-        "nome": nome,
+        "nome": nome_completo,
         "foto": foto,
         "boas_vindas": f"Olá, {nome}!"
     }
