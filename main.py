@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from bancodados import criar_banco
 
 app = FastAPI(title="Nexus")
 
