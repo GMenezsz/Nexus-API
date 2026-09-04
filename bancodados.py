@@ -28,9 +28,10 @@ metas = """
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     usuario_id INTEGER NOT NULL,
     titulo TEXT NOT NULL,
-    salario_liquido REAL NOT NULL,
+    salario_liquido REAL NOT NULL DEFAULT 0,
     meta REAL NOT NULL,
     parcelas_concluidas TEXT NOT NULL DEFAULT '',
+    anos INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE
 )"""
 
@@ -45,6 +46,14 @@ def criar_banco():
 
     try:
         cursor.execute("ALTER TABLE metas ADD COLUMN parcelas_concluidas TEXT NOT NULL DEFAULT ''")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        # Metas antigas (criadas com base em salário) continuam valendo
+        # como se fossem de 1 ano (12 parcelas mensais), igual era antes.
+        cursor.execute("ALTER TABLE metas ADD COLUMN anos INTEGER NOT NULL DEFAULT 1")
         conn.commit()
     except sqlite3.OperationalError:
         pass
@@ -172,25 +181,36 @@ def listar_metas(usuario_id):
     conn.close()
     return dados
 
-def inserir_titulo_salario_e_meta(usuario_id, titulo, salario_liquido, meta):
+def inserir_meta(usuario_id, titulo, meta, anos):
     conn = sqlite3.connect("banco.db")
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO metas (usuario_id, titulo, salario_liquido, meta) VALUES (?, ?, ?, ?)", 
-        (usuario_id, titulo, salario_liquido, meta)
+        "INSERT INTO metas (usuario_id, titulo, salario_liquido, meta, anos) VALUES (?, ?, 0, ?, ?)",
+        (usuario_id, titulo, meta, anos)
     )
     conn.commit()
     conn.close()
 
-def atualizar_titulo_salario_e_meta(usuario_id, titulo_antigo, titulo_novo, salario_liquido, meta):
+def atualizar_meta(usuario_id, titulo_antigo, titulo_novo, meta, anos):
     conn = sqlite3.connect("banco.db")
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE metas SET titulo = ?, salario_liquido = ?, meta = ? WHERE usuario_id = ? AND titulo = ?",
-        (titulo_novo, salario_liquido, meta, usuario_id, titulo_antigo)
+        "UPDATE metas SET titulo = ?, meta = ?, anos = ? WHERE usuario_id = ? AND titulo = ?",
+        (titulo_novo, meta, anos, usuario_id, titulo_antigo)
     )
     conn.commit()
     conn.close()
+
+def buscar_anos_meta(usuario_id, titulo):
+    conn = sqlite3.connect("banco.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT anos FROM metas WHERE usuario_id = ? AND titulo = ?",
+        (usuario_id, titulo)
+    )
+    resultado = cursor.fetchone()
+    conn.close()
+    return resultado[0] if resultado else None
 
 def buscar_parcelas_meta(usuario_id, titulo):
     conn = sqlite3.connect("banco.db")
