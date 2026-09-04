@@ -47,7 +47,6 @@ def criar_banco():
         cursor.execute("ALTER TABLE metas ADD COLUMN parcelas_concluidas TEXT NOT NULL DEFAULT ''")
         conn.commit()
     except sqlite3.OperationalError:
-        # Coluna já existe, nada a fazer.
         pass
 
     conn.close()
