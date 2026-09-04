@@ -1,7 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from bancodados import criar_banco
-from routers import metas, transacoes, criar_login
 
 app = FastAPI(title="Nexus")
 
